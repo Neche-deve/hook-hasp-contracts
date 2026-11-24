@@ -3,7 +3,8 @@
 mod allowlist;
 
 pub use allowlist::{
-    SessionAccountParams, SessionData, SessionError, SessionStorageKey, MAX_SESSION_DURATION,
+    SessionAccountParams, SessionData, SessionError, SessionRevoked, SessionStorageKey,
+    MAX_SESSION_DURATION, REVOCATION_BITS_PER_WORD,
 };
 use soroban_sdk::{auth::Context, contract, contractimpl, Address, Env, Symbol, Vec};
 use stellar_accounts::{
@@ -124,6 +125,22 @@ impl SessionPolicy {
         smart_account: Address,
     ) {
         allowlist::create_session(e, &params, &context_rule, &smart_account)
+    }
+
+    /// Revokes a session before its natural expiry. Only the smart account
+    /// owner can call this, and the next authorization attempt with that
+    /// session fails immediately.
+    ///
+    /// # Errors
+    ///
+    /// * Refer to [`SessionError`] for the validation failures.
+    pub fn revoke_session(e: &Env, session_id: u32, smart_account: Address) {
+        allowlist::revoke_session(e, session_id, &smart_account)
+    }
+
+    /// Returns whether a session ID has been revoked for the smart account.
+    pub fn is_revoked(e: &Env, session_id: u32, smart_account: Address) -> bool {
+        allowlist::is_revoked(e, session_id, &smart_account)
     }
 
     /// Retrieves the allowlist for a smart account's session policy.
