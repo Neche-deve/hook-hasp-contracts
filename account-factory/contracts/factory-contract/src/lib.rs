@@ -63,6 +63,11 @@ pub enum FactoryError {
     MissingThreshold = 5,
     InvalidThreshold = 6,
     InvalidEd25519Key = 7,
+    /// An internal invariant was violated. This should never be reachable in
+    /// correct operation; it exists solely to give `.unwrap_or_else` a
+    /// `panic_with_error!` target that is unambiguously distinct from all
+    /// application-level errors.
+    InternalError = 8,
     InvalidWebAuthnKey = 9,
     InvalidEd25519Verifier = 10,
     InvalidWebAuthnVerifier = 12,
@@ -276,7 +281,7 @@ fn canonicalize_signers(env: &Env, signers: &Vec<AccountSignerInit>) -> Vec<Acco
         let mut idx = 0u32;
 
         while idx < canonical.len() {
-            let existing = canonical.get(idx).unwrap();
+            let existing = canonical.get(idx).unwrap_or_else(|| panic_with_error!(env, FactoryError::InternalError));
             match compare_signers(&existing, &signer) {
                 core::cmp::Ordering::Equal => {
                     panic_with_error!(env, FactoryError::DuplicateSigner);
