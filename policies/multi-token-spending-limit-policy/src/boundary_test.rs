@@ -134,6 +134,7 @@ fn transfer_context(e: &Env, token: &Address, amount: i128) -> Context {
 // =========================================================================
 
 #[test]
+#[should_panic(expected = "Error(Contract, #15)")] // InvalidAmount
 fn test_spending_boundary_amount_zero() {
     let (e, smart_account, client) = setup_env();
     let oracle = setup_oracle(&e, ONE_USD);
@@ -149,12 +150,9 @@ fn test_spending_boundary_amount_zero() {
         100,
     );
 
-    // 0 amount should be allowed and consume 0 USD
+    // 0 amount must be rejected explicitly with InvalidAmount (#15)
     let context = transfer_context(&e, &token, 0);
     client.enforce(&context, &Vec::new(&e), &rule, &smart_account);
-
-    let data = client.get_policy_data(&rule.id, &smart_account);
-    assert_eq!(data.cached_total_spent_usd, 0);
 }
 
 #[test]
@@ -264,7 +262,7 @@ fn test_spending_boundary_i128_max_overflow_fails_closed() {
 }
 
 #[test]
-#[should_panic(expected = "Error(Contract, #6)")] // InvalidTransferArgs (negative amount)
+#[should_panic(expected = "Error(Contract, #15)")] // InvalidAmount (negative amount)
 fn test_spending_boundary_negative_amount_fails_closed() {
     let (e, smart_account, client) = setup_env();
     let oracle = setup_oracle(&e, ONE_USD);

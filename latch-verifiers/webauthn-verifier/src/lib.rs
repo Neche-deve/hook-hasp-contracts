@@ -60,8 +60,8 @@ impl Verifier for WebAuthnVerifier {
         };
 
         let pub_key: BytesN<65> = match extract_from_bytes(e, &key_data, 0..65) {
-            Ok(k) => k,
-            Err(_) => panic_with_error!(e, WebAuthnVerifierError::InvalidKeyData),
+            Some(k) => k,
+            None => panic_with_error!(e, WebAuthnVerifierError::InvalidKeyData),
         };
 
         webauthn::verify(e, &hash, &pub_key, &sig_struct)

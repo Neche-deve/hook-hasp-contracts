@@ -246,6 +246,8 @@ fn enforce_tracks_different_fns_independently() {
             &context_rule,
             &smart_account,
         );
+    });
+    e.as_contract(&address, || {
         // "get" — different function, independent counter, should succeed.
         enforce(
             &e,

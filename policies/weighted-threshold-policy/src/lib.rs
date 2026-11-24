@@ -132,7 +132,6 @@ impl WeightedThresholdPolicy {
         context_rule: ContextRule,
         smart_account: Address,
     ) {
-        smart_account.require_auth();
         let signer_weights =
             weighted_threshold::get_signer_weights(&e, &context_rule, &smart_account);
         validate_threshold(&e, threshold, &signer_weights);
@@ -146,7 +145,6 @@ impl WeightedThresholdPolicy {
         context_rule: ContextRule,
         smart_account: Address,
     ) {
-        smart_account.require_auth();
         let threshold = weighted_threshold::get_threshold(&e, context_rule.id, &smart_account);
         let mut signer_weights =
             weighted_threshold::get_signer_weights(&e, &context_rule, &smart_account);

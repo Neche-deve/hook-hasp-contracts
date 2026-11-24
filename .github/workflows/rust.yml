@@ -189,6 +189,8 @@ jobs:
   verifier-benchmarks:
     needs: changes
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
     steps:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
 
@@ -201,13 +203,15 @@ jobs:
       - name: Generate verifier resource benchmark report
         if: needs.changes.outputs.code == 'true'
         run: |
+          set -o pipefail
           {
             echo "## Cryptographic Verifier Resource Benchmark Report"
             echo ""
             for crate in ed25519-verifier p256-verifier secp256k1-verifier webauthn-verifier; do
               echo "### \`$crate\`"
               echo '```text'
-              cargo test --manifest-path "latch-verifiers/$crate/Cargo.toml" -- --nocapture | grep -E "test |representative native verify resources" || true
+              output="$(cargo test --manifest-path "latch-verifiers/$crate/Cargo.toml" -- --nocapture)"
+              printf '%s\n' "$output" | grep -E "test |representative native verify resources" || true
               echo '```'
               echo ""
             done

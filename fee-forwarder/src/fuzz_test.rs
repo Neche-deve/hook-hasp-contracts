@@ -22,8 +22,8 @@ extern crate std;
 
 use soroban_sdk::{
     contract, contractimpl,
-    testutils::{Address as _, MockAuth, MockAuthInvoke},
-    vec, Address, Env, IntoVal, String, Symbol, TryIntoVal, Val, Vec,
+    testutils::Address as _,
+    vec, Address, Env, IntoVal, MuxedAddress, String, Symbol, Val, Vec,
 };
 use stellar_tokens::fungible::{Base, FungibleToken};
 
@@ -154,7 +154,7 @@ fn fuzz_multiple_executors_balance_never_underflows() {
         (12_345, 12_345),
     ];
     let num_executors = fee_schedule.len();
-    let total_fees: i128 = fee_schedule.iter().map(|(_, f)| f).sum();
+    let _total_fees: i128 = fee_schedule.iter().map(|(_, f)| f).sum();
     let user_balance = 1_000_000_000i128;
 
     let s = setup_fuzz(&e, num_executors, user_balance);
@@ -342,7 +342,13 @@ fn fuzz_allowlist_interleaving_preserves_balance_integrity() {
     let fn_args: Vec<Val> = vec![&e];
     let current_ledger = e.ledger().sequence();
 
-    // Enable the allowlist so only s.token is accepted.
+    // Enable the allowlist with s.token and a second placeholder token so that
+    // disabling s.token keeps the allowlist active (OZ treats an empty allowlist
+    // as disabled / accepting all tokens).
+    let other_token = Address::generate(&e);
+    s.forwarder
+        .mock_all_auths()
+        .enable_fee_token(&other_token, &s.manager);
     s.forwarder
         .mock_all_auths()
         .enable_fee_token(&s.token.address, &s.manager);

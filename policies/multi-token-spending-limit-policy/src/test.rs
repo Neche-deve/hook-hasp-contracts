@@ -761,6 +761,7 @@ fn test_enforce_sub_unit_transfer_rounds_up_to_one() {
 }
 
 #[test]
+#[should_panic(expected = "Error(Contract, #15)")] // InvalidAmount
 fn test_enforce_zero_amount_transfer_records_zero() {
     let (e, smart_account, client) = setup_env();
     let oracle = setup_oracle(&e, ONE_USD);
@@ -769,13 +770,9 @@ fn test_enforce_zero_amount_transfer_records_zero() {
     let rule =
         install_policy(&e, &client, &smart_account, &oracle, vec![&e, token.clone()], 1_000, 100);
 
-    // A genuinely zero-amount transfer records $0; ceiling only applies when
-    // the product (amount * price) is non-zero.
+    // Zero-amount transfers are rejected explicitly with InvalidAmount.
     let context = transfer_context(&e, &token, 0);
     client.enforce(&context, &Vec::new(&e), &rule, &smart_account);
-
-    let data = client.get_policy_data(&rule.id, &smart_account);
-    assert_eq!(data.cached_total_spent_usd, 0);
 }
 
 #[test]

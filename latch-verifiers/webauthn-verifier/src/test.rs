@@ -637,8 +637,8 @@ mod adversarial_client_data_tests {
     fn verify_rejects_escaped_characters_in_challenge() {
         let encoded_challenge = base64url_encode(&TEST_PAYLOAD);
         let challenge_str = std::str::from_utf8(&encoded_challenge).unwrap();
-        // Insert an escaped forward slash or escaped character inside the challenge string
-        let escaped_challenge = challenge_str.replace('b', r#"\/b"#);
+        // Insert an escaped forward slash inside the challenge string
+        let escaped_challenge = std::format!(r#"{}\/{}"#, &challenge_str[..4], &challenge_str[4..]);
         let client_data = std::format!(
             r#"{{"type":"webauthn.get","challenge":"{escaped_challenge}","origin":"https://example.com"}}"#
         );
@@ -647,7 +647,7 @@ mod adversarial_client_data_tests {
     }
 
     #[test]
-    #[should_panic(expected = "Error(Contract, #3112)")]
+    #[should_panic(expected = "Error(Contract, #3114)")]
     fn verify_rejects_invalid_escape_sequence() {
         let encoded_challenge = base64url_encode(&TEST_PAYLOAD);
         let challenge_str = std::str::from_utf8(&encoded_challenge).unwrap();

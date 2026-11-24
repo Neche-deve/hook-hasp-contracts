@@ -3,20 +3,21 @@ extern crate std;
 
 use soroban_sdk::{
     auth::{Context, ContractContext},
-    contract, contractimpl, symbol_short,
-    testutils::Address as _,
+    symbol_short,
+    testutils::{Address as _, Ledger as _},
     vec, Address, Env, IntoVal, String, Val, Vec,
 };
 use stellar_accounts::{
-    policies::{spending_limit::SpendingLimitAccountParams, Policy},
+    policies::spending_limit::SpendingLimitAccountParams,
     smart_account::{ContextRule, ContextRuleType, Signer},
 };
 
-use crate::SpendingLimitPolicy;
+use crate::{SpendingLimitPolicy, SpendingLimitPolicyClient};
 
 fn setup() -> (Env, Address, Address, SpendingLimitPolicyClient<'static>) {
     let e = Env::default();
     e.mock_all_auths();
+    e.ledger().set_sequence_number(1_000);
     let smart_account = Address::generate(&e);
     let target = Address::generate(&e);
     let policy_id = e.register(SpendingLimitPolicy, ());
@@ -74,7 +75,7 @@ fn test_spending_boundary_install_u64_max() {
 
     let data = client.get_spending_limit_data(&rule.id, &smart_account);
     assert_eq!(data.spending_limit, u64_max);
-    assert_eq!(data.current_spent, 0);
+    assert_eq!(data.cached_total_spent, 0);
 }
 
 #[test]
@@ -94,7 +95,7 @@ fn test_spending_boundary_install_i128_max() {
 
     let data = client.get_spending_limit_data(&rule.id, &smart_account);
     assert_eq!(data.spending_limit, i128::MAX);
-    assert_eq!(data.current_spent, 0);
+    assert_eq!(data.cached_total_spent, 0);
 }
 
 #[test]
@@ -112,10 +113,10 @@ fn test_spending_boundary_enforce_zero_amount() {
     );
 
     let context = transfer_context(&e, &target, 0);
-    client.enforce(&context, &Vec::new(&e), &rule, &smart_account);
+    client.enforce(&context, &rule.signers, &rule, &smart_account);
 
     let data = client.get_spending_limit_data(&rule.id, &smart_account);
-    assert_eq!(data.current_spent, 0);
+    assert_eq!(data.cached_total_spent, 0);
 }
 
 #[test]
@@ -135,14 +136,14 @@ fn test_spending_boundary_enforce_crossing_64bit_boundary() {
 
     // Spend u64::MAX - 1
     let context1 = transfer_context(&e, &target, u64_max - 1);
-    client.enforce(&context1, &Vec::new(&e), &rule, &smart_account);
+    client.enforce(&context1, &rule.signers, &rule, &smart_account);
 
     // Spend 2 to cross 64-bit boundary to u64::MAX + 1
     let context2 = transfer_context(&e, &target, 2);
-    client.enforce(&context2, &Vec::new(&e), &rule, &smart_account);
+    client.enforce(&context2, &rule.signers, &rule, &smart_account);
 
     let data = client.get_spending_limit_data(&rule.id, &smart_account);
-    assert_eq!(data.current_spent, u64_max + 1);
+    assert_eq!(data.cached_total_spent, u64_max + 1);
 }
 
 #[test]
@@ -162,10 +163,10 @@ fn test_spending_boundary_exact_limit() {
 
     // Exactly spend the limit
     let context = transfer_context(&e, &target, limit);
-    client.enforce(&context, &Vec::new(&e), &rule, &smart_account);
+    client.enforce(&context, &rule.signers, &rule, &smart_account);
 
     let data = client.get_spending_limit_data(&rule.id, &smart_account);
-    assert_eq!(data.current_spent, limit);
+    assert_eq!(data.cached_total_spent, limit);
 }
 
 #[test]

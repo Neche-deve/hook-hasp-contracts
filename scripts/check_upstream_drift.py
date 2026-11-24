@@ -365,7 +365,7 @@ def main() -> int:
         return 1
 
     if has_drift:
-        if args.fail_on-security-only if hasattr(args, "fail_on-security-only") else args.fail_on_security_only:
+        if args.fail_on_security_only:
             print("[INFO] Upstream drift exists, but no unpatched security advisories found. Passing (--fail-on-security-only).")
             return 0
         else:

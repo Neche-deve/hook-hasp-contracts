@@ -16,7 +16,7 @@ This technical specification and audit report documents the implementation and v
 
 ## 2. Policy Specifications (`deny.toml`)
 
-The configuration file [`deny.toml`](file:///tmp/orchestrator_workspaces/_worktrees/the-Devdrago/computeroracleinc/hook-hasp-contracts/fix-the-devdrago-issue-91/deny.toml) establishes five core pillars:
+The configuration file [`deny.toml`](../deny.toml) establishes five core pillars:
 
 ### 2.1 Strict Crates.io Registry Isolation (`[sources]`)
 To eliminate dependency confusion risks and unauthorized third-party code injection:
@@ -53,7 +53,7 @@ To eliminate dependency confusion risks and unauthorized third-party code inject
 
 ## 3. CI/CD Integration & Enforcement
 
-`cargo-deny` runs automatically on every commit and pull request via [`.github/workflows/security-malware.yml`](file:///tmp/orchestrator_workspaces/_worktrees/the-Devdrago/computeroracleinc/hook-hasp-contracts/fix-the-devdrago-issue-91/.github/workflows/security-malware.yml#L50-L63):
+`cargo-deny` runs automatically on every commit and pull request via [`.github/workflows/security-malware.yml`](../.github/workflows/security-malware.yml#L50-L63):
 
 ```yaml
   cargo-deny:
@@ -71,8 +71,8 @@ To eliminate dependency confusion risks and unauthorized third-party code inject
           manifest-path: ./Cargo.toml
 ```
 
-In addition, [`.github/workflows/security-malware.yml`](file:///tmp/orchestrator_workspaces/_worktrees/the-Devdrago/computeroracleinc/hook-hasp-contracts/fix-the-devdrago-issue-91/.github/workflows/security-malware.yml) pairs `cargo-deny` with:
-1. `malware-and-integrity-scan`: Custom defense-in-depth scanner ([`scripts/security_malware_check.sh`](file:///tmp/orchestrator_workspaces/_worktrees/the-Devdrago/computeroracleinc/hook-hasp-contracts/fix-the-devdrago-issue-91/scripts/security_malware_check.sh)) checking for native binaries, disguised ELF/PE binaries, malicious build hooks (`build.rs`), Trojan Source Unicode attacks, and unvetted sources.
+In addition, [`.github/workflows/security-malware.yml`](../.github/workflows/security-malware.yml) pairs `cargo-deny` with:
+1. `malware-and-integrity-scan`: Custom defense-in-depth scanner ([`scripts/security_malware_check.sh`](../scripts/security_malware_check.sh)) checking for native binaries, disguised ELF/PE binaries, malicious build hooks (`build.rs`), Trojan Source Unicode attacks, and unvetted sources.
 2. `cargo-audit`: Advisory scanning against the RustSec database.
 3. `dependency-review`: GitHub action checking for vulnerable or copyleft PR additions.
 
@@ -86,5 +86,5 @@ In addition, [`.github/workflows/security-malware.yml`](file:///tmp/orchestrator
 2. **Banned Packages Audit**:
    - Checked for banned native bindings (`openssl-sys`, `libssh2-sys`, `curl-sys`). Zero banned packages resolved in the dependency tree.
 3. **Multi-layer Scanner Verification**:
-   - Ran [`scripts/test_security_malware_check.sh`](file:///tmp/orchestrator_workspaces/_worktrees/the-Devdrago/computeroracleinc/hook-hasp-contracts/fix-the-devdrago-issue-91/scripts/test_security_malware_check.sh): 14 out of 14 adversarial self-tests passed.
-   - Ran [`scripts/security_malware_check.sh`](file:///tmp/orchestrator_workspaces/_worktrees/the-Devdrago/computeroracleinc/hook-hasp-contracts/fix-the-devdrago-issue-91/scripts/security_malware_check.sh): All repository files passed with zero violations.
+   - Ran [`scripts/test_security_malware_check.sh`](../scripts/test_security_malware_check.sh): 14 out of 14 adversarial self-tests passed.
+   - Ran [`scripts/security_malware_check.sh`](../scripts/security_malware_check.sh): All repository files passed with zero violations.

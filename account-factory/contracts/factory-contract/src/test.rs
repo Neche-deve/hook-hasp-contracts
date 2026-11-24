@@ -691,12 +691,12 @@ fn front_running_attempt_with_delegated_signer_cannot_collide() {
     let attacker_delegated = delegated_signer(&env);
 
     let victim_params = AccountInitParams {
-        signers: soroban_sdk::vec![&env, AccountSignerInit::Delegated(victim_delegated)],
+        signers: soroban_sdk::vec![&env, victim_delegated],
         threshold: None,
         account_salt: salt.clone(),
     };
     let attacker_params = AccountInitParams {
-        signers: soroban_sdk::vec![&env, AccountSignerInit::Delegated(attacker_delegated)],
+        signers: soroban_sdk::vec![&env, attacker_delegated],
         threshold: None,
         account_salt: salt,
     };

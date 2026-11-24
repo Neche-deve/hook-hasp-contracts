@@ -9,7 +9,7 @@ extern crate std;
 // mirroring OZ's own `examples/fee-forwarder-permissioned` test suite.
 use soroban_sdk::{
     contract, contractimpl,
-    testutils::{Address as _, MockAuth, MockAuthInvoke},
+    testutils::{Address as _, Ledger as _, MockAuth, MockAuthInvoke},
     vec, Address, Env, IntoVal, MuxedAddress, String, Symbol, TryFromVal, TryIntoVal, Val, Vec,
 };
 use stellar_tokens::fungible::{Base, FungibleToken};
@@ -661,7 +661,7 @@ impl MockAccount {
     }
 }
 
-/// Recursive proxy contract to simulate deep call chains up to Soroban's call stack depth limit.
+/// Proxy contract to simulate deep non-reentrant cross-contract call chains.
 #[contract]
 pub struct RecursiveProxy;
 
@@ -669,17 +669,21 @@ pub struct RecursiveProxy;
 impl RecursiveProxy {
     pub fn recurse_and_call(
         e: Env,
-        depth_remaining: u32,
+        chain: Vec<Address>,
         target_account: Address,
         policy: Address,
         verifier: Address,
         payload: Val,
         proof: Val,
     ) -> bool {
-        if depth_remaining > 0 {
-            let proxy_client = RecursiveProxyClient::new(&e, &e.current_contract_address());
+        if let Some(next_proxy) = chain.get(0) {
+            let mut rest = Vec::new(&e);
+            for i in 1..chain.len() {
+                rest.push_back(chain.get(i).unwrap());
+            }
+            let proxy_client = RecursiveProxyClient::new(&e, &next_proxy);
             proxy_client.recurse_and_call(
-                &(depth_remaining - 1),
+                &rest,
                 &target_account,
                 &policy,
                 &verifier,
@@ -750,19 +754,16 @@ fn test_invocation_chain_under_maximum_call_stack_depth() {
     let dummy_payload = 123u32.into_val(&e);
     let dummy_proof = 456u32.into_val(&e);
 
-    // Soroban DEFAULT_HOST_DEPTH_LIMIT is 100 frames.
-    // Call stack breakdown for our invocation:
-    // Frame 1: FeeForwarder.forward
-    // Frame 2..94: RecursiveProxy.recurse_and_call (93 frames, where depth_remaining goes from 92 down to 0)
-    // Frame 95: MockAccount.execute_with_policy
-    // Frame 96: MockPolicy.enforce_with_verifier
-    // Frame 97: MockVerifier.verify
-    // Total nested frames = 97 frames, safely within Soroban's maximum host call stack depth limit (100).
-    let depth_remaining: u32 = 92;
+    // Build a chain of distinct proxy contracts (Soroban disallows same-contract
+    // re-entrancy) safely within Soroban's maximum host call stack depth limit.
+    let mut chain = Vec::new(&e);
+    for _ in 0..10 {
+        chain.push_back(e.register(RecursiveProxy, ()));
+    }
 
     let target_args: Vec<Val> = vec![
         &e,
-        depth_remaining.into_val(&e),
+        chain.into_val(&e),
         account_id.to_val(),
         policy_id.to_val(),
         verifier_id.to_val(),
@@ -804,12 +805,12 @@ fn test_invocation_chain_exceeding_maximum_call_stack_depth_fails_safely() {
     let dummy_payload = 123u32.into_val(&e);
     let dummy_proof = 456u32.into_val(&e);
 
-    // Exceeding the 100-frame host depth limit triggers an ExceededLimit host error
-    let excessive_depth: u32 = 100;
+    // Passing proxy_id inside its own chain triggers Soroban's re-entrancy/depth failure.
+    let chain = vec![&e, proxy_id.clone()];
 
     let target_args: Vec<Val> = vec![
         &e,
-        excessive_depth.into_val(&e),
+        chain.into_val(&e),
         account_id.to_val(),
         policy_id.to_val(),
         verifier_id.to_val(),

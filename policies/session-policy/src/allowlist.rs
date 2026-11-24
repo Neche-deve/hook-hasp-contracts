@@ -189,8 +189,9 @@ pub fn check_policy(
     let Some(data) = e.storage().persistent().get::<_, SessionData>(&key) else {
         return (false, false);
     };
-    let allowed = data.allowed_fns.contains(fn_name);
-    (allowed, allowed)
+    let fn_allowed = data.allowed_fns.contains(fn_name);
+    let would_pass = fn_allowed && !is_revoked(e, context_rule_id, smart_account);
+    (would_pass, fn_allowed)
 }
 
 /// Retrieves the allowlist for a smart account's session policy.

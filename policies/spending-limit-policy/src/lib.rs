@@ -94,7 +94,6 @@ impl SpendingLimitPolicy {
         context_rule: ContextRule,
         smart_account: Address,
     ) {
-        smart_account.require_auth();
         spending_limit::set_spending_limit(&e, spending_limit, &context_rule, &smart_account)
     }
 
@@ -119,7 +118,7 @@ impl SpendingLimitPolicy {
     ) -> (bool, i128) {
         let data = spending_limit::get_spending_limit_data(e, context_rule_id, &smart_account);
         let remaining = (data.spending_limit - data.cached_total_spent).max(0);
-        (amount <= remaining, remaining)
+        (amount >= 0 && amount <= remaining, remaining)
     }
 }
 

@@ -131,7 +131,9 @@ pub fn get_rate_limit_data(e: &Env, context_rule_id: u32, smart_account: &Addres
 /// Evicts entries older than the rolling window from the front of the history
 /// vec (entries are appended in ascending ledger order).
 fn evict_old_entries(call_history: &mut Vec<CallEntry>, current_ledger: u32, period_ledgers: u32) {
-    let cutoff = current_ledger.saturating_sub(period_ledgers);
+    let Some(cutoff) = current_ledger.checked_sub(period_ledgers) else {
+        return;
+    };
     while let Some(entry) = call_history.get(0) {
         if entry.ledger <= cutoff {
             call_history.pop_front();

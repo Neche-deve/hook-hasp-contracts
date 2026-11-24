@@ -710,6 +710,8 @@ fn test_install_rejects_already_installed() {
             &rule,
             &smart_account,
         );
+    });
+    e.as_contract(&policy_id, || {
         conditions::install(
             &e,
             &ParameterScopedAccountParams { conditions },
@@ -744,6 +746,8 @@ fn test_uninstall_success() {
             &rule,
             &smart_account,
         );
+    });
+    e.as_contract(&policy_id, || {
         conditions::uninstall(&e, &rule, &smart_account);
     });
 
