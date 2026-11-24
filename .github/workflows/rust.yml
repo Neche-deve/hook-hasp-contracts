@@ -185,3 +185,31 @@ jobs:
       - name: Build every contract to WASM (whole workspace)
         if: needs.changes.outputs.code == 'true'
         run: stellar contract build
+
+  verifier-benchmarks:
+    needs: changes
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
+
+      - name: Install Rust toolchain
+        if: needs.changes.outputs.code == 'true'
+        uses: actions-rust-lang/setup-rust-toolchain@166cdcfd11aee3cb47222f9ddb555ce30ddb9659 # v1
+        with:
+          toolchain: stable
+
+      - name: Generate verifier resource benchmark report
+        if: needs.changes.outputs.code == 'true'
+        run: |
+          {
+            echo "## Cryptographic Verifier Resource Benchmark Report"
+            echo ""
+            for crate in ed25519-verifier p256-verifier secp256k1-verifier webauthn-verifier; do
+              echo "### \`$crate\`"
+              echo '```text'
+              cargo test --manifest-path "latch-verifiers/$crate/Cargo.toml" -- --nocapture | grep -E "test |representative native verify resources" || true
+              echo '```'
+              echo ""
+            done
+          } | tee -a "$GITHUB_STEP_SUMMARY"
+
