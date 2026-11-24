@@ -1080,3 +1080,27 @@ fn test_sep41_max_valid_token_decimals_accepted() {
     // 10^20 = 100_000_000_000_000_000_000
     assert_eq!(data.token_divisors.get(0).unwrap(), 100_000_000_000_000_000_000i128);
 }
+
+#[test]
+#[should_panic(expected = "Error(Contract, #6)")] // InvalidTransferArgs
+fn test_enforce_rejects_invalid_amount_arg_type() {
+    let (e, smart_account, client) = setup_env();
+    let oracle = setup_oracle(&e, ONE_USD);
+    let token = setup_token(&e, 0);
+
+    let rule =
+        install_policy(&e, &client, &smart_account, &oracle, vec![&e, token.clone()], 1_000, 100);
+
+    let from = Address::generate(&e);
+    let to = Address::generate(&e);
+    let args: Vec<Val> =
+        vec![&e, from.into_val(&e), to.into_val(&e), Symbol::new(&e, "invalid").into_val(&e)];
+    let context = Context::Contract(ContractContext {
+        contract: token,
+        fn_name: Symbol::new(&e, "transfer"),
+        args,
+    });
+
+    client.enforce(&context, &Vec::new(&e), &rule, &smart_account);
+}
+
