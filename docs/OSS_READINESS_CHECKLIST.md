@@ -78,6 +78,10 @@ got wrong on the first pass here — read the note before you repeat the mistake
       all actions across `.github/workflows/*.yml` use immutable 40-character commit SHAs
       with trailing version comment tags (e.g., `actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0`),
       enforced continuously by `./scripts/security_malware_check.sh`.
+- [x] **Gate PRs introducing vulnerable dependencies with Dependency Review.**
+      Integrated `actions/dependency-review-action` (`fail-on-severity: moderate`) into
+      `.github/workflows/security-malware.yml` to block pull requests introducing crates
+      with security advisories or non-compliant licenses.
 
 ## 4. Contributor Experience
 
