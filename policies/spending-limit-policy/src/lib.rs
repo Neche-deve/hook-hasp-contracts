@@ -122,3 +122,6 @@ impl SpendingLimitPolicy {
         (amount <= remaining, remaining)
     }
 }
+
+#[cfg(test)]
+mod boundary_test;
